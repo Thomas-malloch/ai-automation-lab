@@ -4,22 +4,37 @@ FastAPI service for PDF text extraction, OpenAI structured invoice extraction, c
 
 ## Local Development
 
+Create and activate a virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
 Install dependencies:
 
 ```bash
-python3 -m pip install -e ".[dev]"
+make setup
 ```
 
 Run the API:
 
 ```bash
-python3 -m uvicorn app.main:app --reload
+make dev
 ```
 
 Run tests:
 
 ```bash
-python3 -m pytest
+make test
+```
+
+The equivalent direct commands are:
+
+```bash
+python -m pip install -e ".[dev]"
+python -m pytest
+python -m uvicorn app.main:app --reload --reload-dir app
 ```
 
 ## Endpoints
