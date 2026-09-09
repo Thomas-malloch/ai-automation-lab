@@ -1,2 +1,39 @@
+# Local environment files
 .env
+.env.*
+!.env.example
 
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Java / Spring Boot
+target/
+build/
+.gradle/
+*.class
+
+# Node / React
+node_modules/
+dist/
+coverage/
+.vite/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Local runtime artifacts
+uploads/
+storage/
+tmp/
+*.log
