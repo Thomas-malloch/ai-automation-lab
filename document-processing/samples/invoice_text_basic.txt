@@ -1,0 +1,18 @@
+Example Ltd
+123 Example Street
+Auckland 1010
+New Zealand
+
+Invoice: INV-1004
+Invoice Date: 2026-09-01
+Due Date: 2026-09-15
+
+Bill To:
+Demo Customer Ltd
+
+Description              Quantity   Unit Price   Line Total
+Consulting services      1          372.61       372.61
+
+Subtotal: NZD 372.61
+Tax: NZD 55.89
+Total Due: NZD 428.50

@@ -37,6 +37,24 @@ python -m pytest
 python -m uvicorn app.main:app --reload --reload-dir app
 ```
 
+## OpenAI Configuration
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+Set your local values:
+
+```env
+OPENAI_API_KEY=your_key_here
+OPENAI_MODEL=gpt-5-mini
+USE_MOCK_EXTRACTOR=false
+```
+
+Use `USE_MOCK_EXTRACTOR=true` to run the service without calling OpenAI.
+
 ## Endpoints
 
 - `GET /health`
@@ -48,4 +66,12 @@ Example request:
 {
   "documentText": "raw invoice text"
 }
+```
+
+Example request using the sample invoice text:
+
+```bash
+curl -X POST http://127.0.0.1:8000/extract-invoice \
+  -H "Content-Type: application/json" \
+  -d "{\"documentText\":\"$(tr '\n' ' ' < ../samples/invoice_text_basic.txt)\"}"
 ```
