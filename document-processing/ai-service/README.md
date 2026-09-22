@@ -75,3 +75,11 @@ curl -X POST http://127.0.0.1:8000/extract-invoice \
   -H "Content-Type: application/json" \
   -d "{\"documentText\":\"$(tr '\n' ' ' < ../samples/invoice_text_basic.txt)\"}"
 ```
+
+Or use the helper script:
+
+```bash
+python scripts/test_sample.py ../samples/invoice_text_basic.txt
+python scripts/test_sample.py ../samples/invoice_text_missing_number.txt
+python scripts/test_sample.py ../samples/invoice_text_bad_total.txt
+```

@@ -37,3 +37,11 @@ uploads/
 storage/
 tmp/
 *.log
+
+# Local/generated document samples
+document-processing/samples/*
+!document-processing/samples/.gitkeep
+!document-processing/samples/README.md
+!document-processing/samples/invoice_text_basic.txt
+
+scripts/
