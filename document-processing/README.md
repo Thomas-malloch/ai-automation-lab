@@ -4,6 +4,25 @@ Autonomous invoice-processing API for the AI Automation Systems Lab.
 
 The project accepts a text-based invoice PDF, extracts text, sends that text to a separate AI service for structured invoice extraction, validates the result, persists workflow state in Postgres, and exposes retrieval endpoints.
 
+## Status
+
+V1 MVP complete.
+
+This project intentionally stops at a backend/API workflow. It supports text-based invoice PDFs, deterministic local mock extraction, optional OpenAI extraction, Postgres persistence, and retrieval APIs. OCR, authentication, queues, deployment, and a frontend review UI are out of scope for V1.
+
+## What This Demonstrates
+
+- FastAPI route design for file upload and retrieval workflows.
+- Service-to-service HTTP between the backend and AI service.
+- PDF text extraction with validation for invalid/non-PDF uploads.
+- Structured AI extraction with Pydantic response contracts.
+- Business-rule validation for extracted invoice fields.
+- PostgreSQL persistence through SQLAlchemy ORM models.
+- Alembic-managed database migrations.
+- Transactional persistence for successful document processing.
+- Failed workflow persistence when the AI service fails after text extraction.
+- Focused backend and AI-service tests.
+
 ## Architecture
 
 ```text
@@ -40,17 +59,9 @@ GET  /documents/{document_id}
 
 ## Local Setup
 
-Create virtual environments and install dependencies in both services:
+From `document-processing/`, create virtual environments and install dependencies in both services:
 
 ```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-make setup
-
-cd ../ai-service
-python3 -m venv .venv
-source .venv/bin/activate
 make setup
 ```
 
@@ -119,3 +130,4 @@ make test-ai
 - The backend does not call OpenAI directly. It calls `ai-service`.
 - `ai-service` calls OpenAI only when `USE_MOCK_EXTRACTOR=false`; otherwise it returns deterministic mock invoice data for local development.
 - Current PDF extraction supports text-based PDFs. Scanned/image-only PDFs require OCR and are not supported yet.
+- The committed sample PDF is intentionally small and exists only to make the local demo work from a fresh clone.

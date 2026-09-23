@@ -1,4 +1,12 @@
-.PHONY: postgres-up postgres-down migrate test-backend test-ai run-backend run-ai upload-sample list-documents
+.PHONY: setup setup-backend setup-ai postgres-up postgres-down migrate test-backend test-ai run-backend run-ai upload-sample list-documents
+
+setup: setup-backend setup-ai
+
+setup-backend:
+	cd backend && python3 -m venv .venv && .venv/bin/python -m pip install -e ".[dev]"
+
+setup-ai:
+	cd ai-service && python3 -m venv .venv && .venv/bin/python -m pip install -e ".[dev]"
 
 postgres-up:
 	docker compose up -d postgres
