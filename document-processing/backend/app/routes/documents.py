@@ -1,7 +1,6 @@
-from uuid import uuid4
-
 from fastapi import APIRouter, HTTPException, UploadFile, File
 
+from app.db.repositories import create_document
 from app.schemas import DocumentUploadResponse
 from app.services.ai_client import AiServiceError, extract_invoice_from_text
 from app.services.pdf import PdfExtractionError, extract_text_from_pdf
@@ -28,15 +27,24 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentUploadRespons
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     invoice = extraction["invoice"]
+    document_type = "INVOICE"
+    saved_document = create_document(
+        filename=file.filename or "uploaded.pdf",
+        content_type=file.content_type,
+        document_type=document_type,
+        status=extraction["status"],
+        text_length=len(document_text),
+        text_preview=document_text[:500],
+    )
 
     return DocumentUploadResponse(
         document={
-            "id": uuid4(),
-            "filename": file.filename or "uploaded.pdf",
+            "id": saved_document.id,
+            "filename": saved_document.filename,
             "contentType": file.content_type,
-            "documentType": "INVOICE",
-            "textLength": len(document_text),
-            "textPreview": document_text[:500],
+            "documentType": saved_document.document_type,
+            "textLength": saved_document.text_length,
+            "textPreview": saved_document.text_preview,
         },
         processing={
             "status": extraction["status"],
