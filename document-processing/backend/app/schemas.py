@@ -1,4 +1,5 @@
 from typing import Any
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -38,3 +39,20 @@ class DocumentUploadResponse(BaseModel):
     document: DocumentSummary
     processing: ProcessingSummary
     extraction: ExtractionResult
+
+
+class DocumentListItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UUID
+    filename: str
+    document_type: str = Field(alias="documentType")
+    status: str
+    text_length: int = Field(alias="textLength")
+    created_at: datetime = Field(alias="createdAt")
+
+
+class DocumentListResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    documents: list[DocumentListItem]
