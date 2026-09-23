@@ -9,7 +9,7 @@ from app.db.models import Document, Invoice, InvoiceLineItem, ValidationIssue
 from app.db.session import SessionLocal
 
 
-def create_document(
+def create_processed_document(
     *,
     filename: str,
     content_type: str,
@@ -17,6 +17,8 @@ def create_document(
     status: str,
     text_length: int,
     text_preview: str,
+    invoice_data: dict[str, Any],
+    validation_errors: list[dict[str, Any]],
 ) -> Document:
     with SessionLocal() as session:
         document = Document(
@@ -28,57 +30,53 @@ def create_document(
             text_preview=text_preview,
         )
         session.add(document)
+        session.flush()
+
+        _add_invoice_extraction(
+            session=session,
+            document_id=document.id,
+            invoice_data=invoice_data,
+            validation_errors=validation_errors,
+        )
+
         session.commit()
         session.refresh(document)
         return document
 
 
-def create_invoice_extraction(
+def create_failed_document(
     *,
-    document_id: uuid.UUID,
-    invoice_data: dict[str, Any],
-    validation_errors: list[dict[str, Any]],
-) -> Invoice:
+    filename: str,
+    content_type: str,
+    document_type: str,
+    text_length: int,
+    text_preview: str,
+    error_message: str,
+) -> Document:
     with SessionLocal() as session:
-        invoice = Invoice(
-            document_id=document_id,
-            supplier_name=invoice_data["supplier_name"],
-            invoice_number=invoice_data["invoice_number"],
-            invoice_date=_parse_date(invoice_data.get("invoice_date")),
-            due_date=_parse_date(invoice_data.get("due_date")),
-            currency=invoice_data["currency"],
-            subtotal=_parse_decimal(invoice_data.get("subtotal")),
-            tax=_parse_decimal(invoice_data.get("tax")),
-            total=_parse_decimal(invoice_data.get("total")),
-            confidence=float(invoice_data["confidence"]),
+        document = Document(
+            filename=filename,
+            content_type=content_type,
+            document_type=document_type,
+            status="FAILED",
+            text_length=text_length,
+            text_preview=text_preview,
         )
-        session.add(invoice)
+        session.add(document)
         session.flush()
 
-        for item in invoice_data.get("line_items", []):
-            session.add(
-                InvoiceLineItem(
-                    invoice_id=invoice.id,
-                    description=item["description"],
-                    quantity=_required_decimal(item["quantity"]),
-                    unit_price=_required_decimal(item["unit_price"]),
-                    total=_required_decimal(item["total"]),
-                )
+        session.add(
+            ValidationIssue(
+                document_id=document.id,
+                field="ai_service",
+                message=error_message[:500],
+                severity="ERROR",
             )
-
-        for issue in validation_errors:
-            session.add(
-                ValidationIssue(
-                    document_id=document_id,
-                    field=issue["field"],
-                    message=issue["message"],
-                    severity=issue.get("severity", "ERROR"),
-                )
-            )
+        )
 
         session.commit()
-        session.refresh(invoice)
-        return invoice
+        session.refresh(document)
+        return document
 
 
 def get_document_result(document_id: uuid.UUID) -> dict[str, Any] | None:
@@ -137,6 +135,52 @@ def list_documents(status: str | None = None) -> list[Document]:
             statement = statement.where(Document.status == status)
 
         return list(session.scalars(statement))
+
+
+def _add_invoice_extraction(
+    *,
+    session: Any,
+    document_id: uuid.UUID,
+    invoice_data: dict[str, Any],
+    validation_errors: list[dict[str, Any]],
+) -> Invoice:
+    invoice = Invoice(
+        document_id=document_id,
+        supplier_name=invoice_data["supplier_name"],
+        invoice_number=invoice_data["invoice_number"],
+        invoice_date=_parse_date(invoice_data.get("invoice_date")),
+        due_date=_parse_date(invoice_data.get("due_date")),
+        currency=invoice_data["currency"],
+        subtotal=_parse_decimal(invoice_data.get("subtotal")),
+        tax=_parse_decimal(invoice_data.get("tax")),
+        total=_parse_decimal(invoice_data.get("total")),
+        confidence=float(invoice_data["confidence"]),
+    )
+    session.add(invoice)
+    session.flush()
+
+    for item in invoice_data.get("line_items", []):
+        session.add(
+            InvoiceLineItem(
+                invoice_id=invoice.id,
+                description=item["description"],
+                quantity=_required_decimal(item["quantity"]),
+                unit_price=_required_decimal(item["unit_price"]),
+                total=_required_decimal(item["total"]),
+            )
+        )
+
+    for issue in validation_errors:
+        session.add(
+            ValidationIssue(
+                document_id=document_id,
+                field=issue["field"],
+                message=issue["message"],
+                severity=issue.get("severity", "ERROR"),
+            )
+        )
+
+    return invoice
 
 
 def _parse_date(value: str | None) -> date | None:

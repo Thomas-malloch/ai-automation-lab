@@ -3,8 +3,8 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 
 from app.db.repositories import (
-    create_document,
-    create_invoice_extraction,
+    create_failed_document,
+    create_processed_document,
     get_document_result,
     list_documents,
 )
@@ -40,6 +40,11 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentUploadRespons
         raise HTTPException(status_code=400, detail="Only PDF uploads are supported.")
 
     file_bytes = await file.read()
+    filename = file.filename or "uploaded.pdf"
+    document_type = "INVOICE"
+
+    if not file_bytes.startswith(b"%PDF"):
+        raise HTTPException(status_code=400, detail="Uploaded file is not a valid PDF.")
 
     try:
         document_text = extract_text_from_pdf(file_bytes)
@@ -49,20 +54,24 @@ async def upload_document(file: UploadFile = File(...)) -> DocumentUploadRespons
     try:
         extraction = await extract_invoice_from_text(document_text)
     except AiServiceError as exc:
+        create_failed_document(
+            filename=filename,
+            content_type=file.content_type,
+            document_type=document_type,
+            text_length=len(document_text),
+            text_preview=document_text[:500],
+            error_message=str(exc),
+        )
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     invoice = extraction["invoice"]
-    document_type = "INVOICE"
-    saved_document = create_document(
-        filename=file.filename or "uploaded.pdf",
+    saved_document = create_processed_document(
+        filename=filename,
         content_type=file.content_type,
         document_type=document_type,
         status=extraction["status"],
         text_length=len(document_text),
         text_preview=document_text[:500],
-    )
-    create_invoice_extraction(
-        document_id=saved_document.id,
         invoice_data=invoice,
         validation_errors=extraction.get("validationErrors", []),
     )

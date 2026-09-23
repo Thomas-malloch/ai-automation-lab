@@ -1,11 +1,12 @@
 .PHONY: setup test dev
 
+PYTHON := .venv/bin/python
+
 setup:
-	python -m pip install -e ".[dev]"
+	$(PYTHON) -m pip install -e ".[dev]"
 
 test:
-	python -m pytest
+	$(PYTHON) -m pytest
 
 dev:
-	python -m uvicorn app.main:app --reload --reload-dir app
-
+	$(PYTHON) -m uvicorn app.main:app --reload --reload-dir app --port 8000
